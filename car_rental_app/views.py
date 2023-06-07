@@ -13,7 +13,7 @@ def car(request):
     if request.method == 'GET':
         queryset = Car.objects.all()
         serializers = CarSerializers(queryset,many=True)
-        return Response(serializers.data)
+        return Response(serializers.data,status=status.HTTP_200_OK)
     elif request.method == 'POST':
         serializers = CarSerializers(data=request.data)
         print(serializers)
@@ -29,7 +29,7 @@ def available_car(request):
     if request.method == 'GET':
         queryset = Car.objects.filter(no_of_cars__gt=0)
         serializers = CarSerializers(queryset,many=True)
-        return Response(serializers.data)
+        return Response(serializers.data,status=status.HTTP_200_OK)
     if request.method == 'POST':
         serializers = BookingSerialzers(data=request.data)
         print(request.data)
@@ -43,6 +43,9 @@ def available_car(request):
     
 @api_view()
 def particular_car(request,pk):
+    """
+    Here the pk which is passed is of 
+    """
     car = Car.objects.get(pk=pk)
     # sourcery skip: remove-pass-elif
     if request.method == 'GET':
@@ -66,7 +69,7 @@ def filtered_car(request):
         seat_capacity = request.GET.get('seat_capacity')
         queryset = Car.objects.filter(Q(car_name=car_name)|Q(car_model=car_model)|Q(no_of_cars=no_of_cars)|Q(per_day_price=per_day_price)|Q(seat_capacity=seat_capacity))
         serialize = CarSerializers(queryset,many=True)
-        return Response(serialize.data)
+        return Response(serialize.data,status=status.HTTP_200_OK)
     elif request.method == 'POST':
         serializers = BookingSerialzers(data=request.data)
         print(request.data)
@@ -80,11 +83,14 @@ def filtered_car(request):
     
 
 
-@api_view()
+@api_view(['GET','POST'])
 def particular_user_booking(requset,pk):
     if requset.method == 'GET':
+        user_booking_detail = Booking.objects.filter(user=pk)
+        serializer = BookingSerialzers(user_booking_detail,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    elif requset.method == 'POST':
         pass
-
 
 @api_view()
 def cancel_booking(request,pk):
@@ -103,7 +109,5 @@ def cancel_booking(request,pk):
         car = Car.objects.get(pk=car_id)
         car.no_of_cars = F("no_of_cars") + 1
         car.save()
-        print(car_id)
-        print(booked_car.booking_status)
-        return Response('OK')
+        return Response('OK',status=status.HTTP_200_OK)
     

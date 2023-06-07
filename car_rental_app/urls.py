@@ -7,8 +7,7 @@ urlpatterns = [
     path('filtered-car/',views.filtered_car,name='filtered-car'),
     path('booking/<int:pk>',views.particular_user_booking,name='particular_user_booking'), 
     path('booking/cancel/<int:pk>',views.cancel_booking,name='cancel-booking'),
-
+    
     # path('bookcar')
     # path('booking-extend')
-
 ]
