@@ -11,4 +11,12 @@ class CarSerializers(serializers.ModelSerializer):
 class BookingSerialzers(serializers.ModelSerializer):
     class Meta:
         model = Booking
-        fields = ['car','user','issue_date','return_date']
+        fields = ['id','car','user','issue_date','return_date']
+        
+class ExtendBookingSerializers(serializers.Serializer):
+    car = serializers.IntegerField()
+    user = serializers.IntegerField()
+    issue_date = serializers.DateField()
+    return_date = serializers.DateField()
+    
+    
