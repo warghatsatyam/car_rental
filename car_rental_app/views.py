@@ -26,14 +26,15 @@ def car(request):
 @api_view(['GET','POST'])
 def available_car(request):
     if request.method == 'GET':
-        queryset = Car.objects.filter(available_cars=0)
+        queryset = Car.objects.filter(available_cars__gt=0)
         serializers = CarSerializers(queryset,many=True)
         return Response(serializers.data,status=status.HTTP_200_OK)
     if request.method == 'POST':
-        available_cars = Car.objects.get(pk=request.data['car']).available_cars
+        available_cars = Car.objects.get(pk=request.data['id']).available_cars
         if available_cars>0:    
             serializers = BookingSerialzers(data=request.data)
             serializers.is_valid(raise_exception=True)
+            ic(request.data)
             serializers.save()
             car_id = request.data['car']
             car = Car.objects.get(pk=car_id)
