@@ -8,6 +8,7 @@ class Car(models.Model):
     seat_capacity = models.PositiveSmallIntegerField()
     per_day_price = models.PositiveSmallIntegerField()
     no_of_cars = models.PositiveSmallIntegerField()
+    available_cars = models.PositiveSmallIntegerField()
     booking_queue = models.JSONField(default=list)
 
     class Meta:

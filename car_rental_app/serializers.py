@@ -5,7 +5,7 @@ from rest_framework import serializers
 class CarSerializers(serializers.ModelSerializer):
     class Meta:
         model = Car
-        fields = ['id','car_name','car_model','seat_capacity','per_day_price','no_of_cars']
+        fields = ['id','car_name','car_model','seat_capacity','per_day_price','available_cars']
 
 
 class BookingSerialzers(serializers.ModelSerializer):

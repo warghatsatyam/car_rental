@@ -26,18 +26,18 @@ def car(request):
 @api_view(['GET','POST'])
 def available_car(request):
     if request.method == 'GET':
-        queryset = Car.objects.filter(no_of_cars__gt=0)
+        queryset = Car.objects.filter(available_cars=0)
         serializers = CarSerializers(queryset,many=True)
         return Response(serializers.data,status=status.HTTP_200_OK)
     if request.method == 'POST':
-        no_of_cars = Car.objects.get(pk=request.data['car']).no_of_cars
-        if no_of_cars>0:    
+        available_cars = Car.objects.get(pk=request.data['car']).available_cars
+        if available_cars>0:    
             serializers = BookingSerialzers(data=request.data)
             serializers.is_valid(raise_exception=True)
             serializers.save()
             car_id = request.data['car']
             car = Car.objects.get(pk=car_id)
-            car.no_of_cars = car.no_of_cars -1
+            car.available_cars = car.available_cars -1
             car.save()
             return Response(serializers.data,status=status.HTTP_201_CREATED)
         else:
@@ -53,7 +53,7 @@ def particular_car(request,pk):
     car = Car.objects.get(pk=pk)
     # sourcery skip: remove-pass-elif
     if request.method == 'GET':
-        no_of_car = car.no_of_cars
+        no_of_car = car.available_cars
         if no_of_car > 0:
             car_queryset = Car.objects.get(pk=pk)
             serializer = CarSerializers(car_queryset)
@@ -68,10 +68,10 @@ def filtered_car(request):
     if request.method=='GET':
         car_name = request.GET.get('car_name')
         car_model = request.GET.get('car_model')
-        no_of_cars = request.GET.get('no_of_cars')
+        available_cars = request.GET.get('available_cars')
         per_day_price = request.GET.get('per_day_price')
         seat_capacity = request.GET.get('seat_capacity')
-        queryset = Car.objects.filter(Q(car_name=car_name)|Q(car_model=car_model)|Q(no_of_cars=no_of_cars)|Q(per_day_price=per_day_price)|Q(seat_capacity=seat_capacity))
+        queryset = Car.objects.filter(Q(car_name=car_name)|Q(car_model=car_model)|Q(available_cars=available_cars)|Q(per_day_price=per_day_price)|Q(seat_capacity=seat_capacity))
         serialize = CarSerializers(queryset,many=True)
         return Response(serialize.data,status=status.HTTP_200_OK)
     elif request.method == 'POST':
@@ -81,7 +81,7 @@ def filtered_car(request):
         serializers.save()
         car_id = request.data['car']
         car = Car.objects.get(pk=car_id)
-        car.no_of_cars = car.no_of_cars -1
+        car.available_cars = car.available_cars -1
         car.save()
         return Response(serializers.data,status=status.HTTP_201_CREATED)
  
@@ -98,12 +98,12 @@ def particular_user_booking(requset,pk):
         return Response(serializer.data,status=status.HTTP_200_OK)
     elif requset.method == 'PATCH':
         car = Car.objects.get(pk=requset.data['car'])
-        no_of_cars = car.no_of_cars
-        if no_of_cars > 0:
+        available_cars = car.available_cars
+        if available_cars > 0:
             booking = BookingSerialzers(data=requset.data)
             booking.is_valid(raise_exception=True)
             booking.save()
-            car.no_of_cars = car.no_of_cars - 1
+            car.available_cars = car.available_cars - 1
             car.save()
             return Response(booking.data,status=status.HTTP_201_CREATED)
         else:
@@ -130,6 +130,6 @@ def cancel_booking(request,pk):
         booked_car.booking_status = 'CANCEL'
         booked_car.save()
         car = Car.objects.get(pk=car_id)
-        car.no_of_cars = F("no_of_cars") + 1
+        car.available_cars = F("available_cars") + 1
         car.save()
         return Response('OK',status=status.HTTP_200_OK)
