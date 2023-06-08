@@ -41,8 +41,10 @@ def available_car(request):
             car.save()
             return Response(serializers.data,status=status.HTTP_201_CREATED)
         else:
-            return Response("Need to write logic.")
-        
+            car_id = request.data['car']
+            print(request.data)
+            #car = Car.objects_queue.append()
+            return Response(request.data)
 @api_view()
 def particular_car(request,pk):
     """
@@ -111,8 +113,6 @@ def particular_user_booking(requset,pk):
             car_id = requset.data['car']
             user_id = requset.data['user']
             ic(issue_date,return_date,car_id,user_id)
-            #serializer = BookingSerialzers(data=requset.data)
-            
             return Response('Car is not available let me write that logic to handle this part.')
         
 @api_view()
@@ -133,4 +133,3 @@ def cancel_booking(request,pk):
         car.no_of_cars = F("no_of_cars") + 1
         car.save()
         return Response('OK',status=status.HTTP_200_OK)
-    
