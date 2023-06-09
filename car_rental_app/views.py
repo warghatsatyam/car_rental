@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.db.models import F,Q
 from car_rental_app.models import Car,UserProfile,Booking
-from car_rental_app.serializers import CarSerializers,BookingSerialzers,ExtendBookingSerializers
+from car_rental_app.serializers import CarSerializers,AvailableCarSerializers,BookingSerialzers,ExtendBookingSerializers
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -27,10 +27,10 @@ def car(request):
 def available_car(request):
     if request.method == 'GET':
         queryset = Car.objects.filter(available_cars__gt=0)
-        serializers = CarSerializers(queryset,many=True)
+        serializers = AvailableCarSerializers(queryset,many=True)
         return Response(serializers.data,status=status.HTTP_200_OK)
     if request.method == 'POST':
-        available_cars = Car.objects.get(pk=request.data['id']).available_cars
+        available_cars = Car.objects.get(pk=request.data['car']).available_cars
         if available_cars>0:    
             serializers = BookingSerialzers(data=request.data)
             serializers.is_valid(raise_exception=True)
@@ -43,8 +43,12 @@ def available_car(request):
             return Response(serializers.data,status=status.HTTP_201_CREATED)
         else:
             car_id = request.data['car']
-            print(request.data)
-            #car = Car.objects_queue.append()
+            ic(request.data)
+            car  = Car.objects.get(pk=car_id)
+            ic(car.booking_queue)
+            
+            car.booking_queue.append(request.data)
+            car.save()
             return Response(request.data)
 @api_view()
 def particular_car(request,pk):
@@ -133,4 +137,5 @@ def cancel_booking(request,pk):
         car = Car.objects.get(pk=car_id)
         car.available_cars = F("available_cars") + 1
         car.save()
+        
         return Response('OK',status=status.HTTP_200_OK)
