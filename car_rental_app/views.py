@@ -141,8 +141,11 @@ def cancel_booking(request,pk):
             ic(car.available_cars)
             car.available_cars = car.available_cars + 1
             booked_car.save()
+            car_booking = car.booking_queue.pop(0)
+            serialize = BookingSerialzers(data=car_booking)
+            serialize.is_valid(raise_exception=True)
+            serialize.save()
             car.save()
-            
             ic(car.available_cars)
         return Response('OK',status=status.HTTP_200_OK)
 
