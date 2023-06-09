@@ -129,6 +129,7 @@ def cancel_booking(request,pk):
         pk (_type_): _description_
     """
     if request.method =='GET':
+        ic(pk)
         booked_car = Booking.objects.get(pk=pk)
         ic(booked_car)
         Booking.objects.filter(pk=pk).update(booking_status='CANCEL')
@@ -136,7 +137,7 @@ def cancel_booking(request,pk):
         # booked_car.booking_status = 'CANCEL'
         # booked_car.save()
         car = Car.objects.get(pk=car_id)
-        if booked_car.booking_status!='CANCEL':
+        if booked_car.booking_status!='CANCEL' and len(car.booking_queue)>0:
             booked_car.booking_status = 'CANCEL'
             ic(car.available_cars)
             car.available_cars = car.available_cars + 1
@@ -145,10 +146,18 @@ def cancel_booking(request,pk):
             serialize = BookingSerialzers(data=car_booking)
             serialize.is_valid(raise_exception=True)
             serialize.save()
+            car.available_cars = car.available_cars -1
             car.save()
             ic(car.available_cars)
-        return Response('OK',status=status.HTTP_200_OK)
-
+            return Response('Cancel The Normal booking and the element from booking queue is added to booking record',status=status.HTTP_200_OK)
+        elif booked_car.booking_status!='CANCEL':
+            booked_car.booking_status = 'CANCEL'
+            car.available_cars = car.available_cars + 1
+            booked_car.save()
+            car.save()
+            return Response("This is Normal Cancel when there is no advance booking",status=status.HTTP_200_OK)
+        else:
+            return Response("No Such Booking Entry Present",status=status.HTTP_200_OK)
 
 @api_view(['GET','POST'])
 def extend_booking(request,pk):
@@ -156,3 +165,4 @@ def extend_booking(request,pk):
         return Response('Extend Data',status=status.HTTP_200_OK)
     if request.method == 'POST':
         return Response(pk,status=status.HTTP_200_OK)
+    
