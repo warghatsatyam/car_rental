@@ -129,13 +129,27 @@ def cancel_booking(request,pk):
         pk (_type_): _description_
     """
     if request.method =='GET':
-        booked_car = Booking.objects.filter(pk=pk)[0]
+        booked_car = Booking.objects.get(pk=pk)
+        ic(booked_car)
         Booking.objects.filter(pk=pk).update(booking_status='CANCEL')
         car_id = booked_car.car.id
-        booked_car.booking_status = 'CANCEL'
-        booked_car.save()
+        # booked_car.booking_status = 'CANCEL'
+        # booked_car.save()
         car = Car.objects.get(pk=car_id)
-        car.available_cars = F("available_cars") + 1
-        car.save()
-        
+        if booked_car.booking_status!='CANCEL':
+            booked_car.booking_status = 'CANCEL'
+            ic(car.available_cars)
+            car.available_cars = car.available_cars + 1
+            booked_car.save()
+            car.save()
+            
+            ic(car.available_cars)
         return Response('OK',status=status.HTTP_200_OK)
+
+
+@api_view(['GET','POST'])
+def extend_booking(request,pk):
+    if request.method == 'GET':
+        return Response('Extend Data',status=status.HTTP_200_OK)
+    if request.method == 'POST':
+        return Response(pk,status=status.HTTP_200_OK)
