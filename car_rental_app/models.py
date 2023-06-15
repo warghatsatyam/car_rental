@@ -9,7 +9,6 @@ class Car(models.Model):
     per_day_price = models.PositiveSmallIntegerField()
     no_of_cars = models.PositiveSmallIntegerField()
     available_cars = models.PositiveSmallIntegerField()
-    booking_queue = models.JSONField(default=list)
 
     class Meta:
         db_table = 'car'
@@ -18,14 +17,8 @@ class Car(models.Model):
         return self.car_name
 
 class UserProfile(models.Model):
-    GENDER = [
-        ('M','MALE'),
-        ('F','FEMALE'),
-        ('O','OTHER'),
-    ]
     username = models.CharField(max_length=50)
     age = models.PositiveSmallIntegerField()
-    gender = models.CharField(max_length=1,choices=GENDER)
     country = models.CharField(max_length=50)
     email = models.EmailField()
     contact_no = models.PositiveSmallIntegerField()
@@ -42,6 +35,7 @@ class Booking(models.Model):
     issue_date = models.DateField()
     return_date = models.DateField()
     booking_status = models.CharField(max_length=10)
+    
     class Meta:
         db_table = 'booking'
 
