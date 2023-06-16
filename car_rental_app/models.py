@@ -15,7 +15,7 @@ class Car(models.Model):
 
     def __str__(self):
         return self.car_name
-
+    
 class UserProfile(models.Model):
     username = models.CharField(max_length=50)
     age = models.PositiveSmallIntegerField()
@@ -38,6 +38,10 @@ class Booking(models.Model):
     
     class Meta:
         db_table = 'booking'
+    
+    def get_booking_detail(self,return_date):
+        print(return_date)
+        return '1'
 
 
     
