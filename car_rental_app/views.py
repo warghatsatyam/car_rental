@@ -61,7 +61,7 @@ def userbookingdetail(request,pk):
         serialize = BookingSerializers(userbooking,many=True)
         return Response(serialize.data,status=status.HTTP_200_OK)
     if request.method == 'POST':
-        booking = Booking.objects.filter(pk=pk1)
+        booking = Booking.objects.filter(pk=pk)
         ic(booking)
         return Response(booking)
         
