@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db.models import F,Q
-from car_rental_app.models import Car,UserProfile,Booking
+from car_rental_app.models import Car,Booking
 from car_rental_app.serializers import CarSerializers,AvailableCarSerializers,BookingSerializers
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -65,8 +65,6 @@ def userbookingdetail(request,pk):
         ic(booking)
         return Response(booking)
         
-
-
 @api_view()
 def cancelbooking(request,pk):
     booking = Booking.objects.get(pk=pk)
@@ -80,7 +78,7 @@ def cancelbooking(request,pk):
 
 def str_time(date):  # sourcery skip: avoid-builtin-shadow
     format = '%Y-%m-%d'
-    return datetime.strptime(date,format)
+    return datetime.strptime(date,format).date()
 
 @api_view(['GET'])
 def filter_available_car(request):
@@ -110,17 +108,21 @@ def filter_available_car(request):
 
 
 @api_view(['GET','POST'])
-def extend_user_booking(request,pk,pk1):
+def extend_user_booking(request,pk):
     if request.method == 'GET':
-        userbooking = Booking.objects.filter(pk=pk1)
+        userbooking = Booking.objects.filter(pk=pk)
         ic(userbooking)
         serialize = BookingSerializers(userbooking,many=True)
         return Response(serialize.data,status=status.HTTP_200_OK)
     if request.method == 'POST':
         booking_id = request.data['id']
-        return_date = str_time(request.data['return_date'])
         booking = Booking.objects.get(pk=booking_id)
-        response = booking.get_booking_detail(return_date)
-        return Response('OK')
+        return_date = str_time(request.data['return_date'])
+        response = booking.get_booking_detail(request,booking,return_date)
+        booking = Booking.objects.get(pk=booking_id)
+        booking_serializer = BookingSerializers(booking)
+        if response:
+            return Response(booking_serializer.data,status=status.HTTP_200_OK)
+        return Response("Cannot Extend",status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
