@@ -11,15 +11,17 @@ from django.http import Http404
 
 @api_view(['GET','POST'])
 def add_car(request):
-    if request.method == 'GET':
-        return Response("Add Car",status=status.HTTP_200_OK)
-    elif request.method == 'POST':
-        serialze = CarSerializers(data=request.data)
-        serialze.is_valid(raise_exception=True)
-        serialze.save()
-        return Response(serialze.data,status=status.HTTP_201_CREATED)
-    
-    
+    try:
+        if request.method == 'GET':
+            return Response("Add Car",status=status.HTTP_200_OK)
+        elif request.method == 'POST':
+            serialze = CarSerializers(data=request.data)
+            serialze.is_valid(raise_exception=True)
+            serialze.save()
+            return Response(serialze.data,status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET','POST'])
 def getavailablecar(request):
     if request.method == 'GET':
@@ -27,54 +29,68 @@ def getavailablecar(request):
         serialize = AvailableCarSerializers(car,many=True)
         return Response(serialize.data,status=status.HTTP_200_OK)
     elif request.method == 'POST':
-        car = Car.objects.get(pk=request.data['car'])
-        if car.available_cars>0:
-            serialize = BookingSerializers(data=request.data)
-            serialize.is_valid(raise_exception=True)
-            serialize.save()
-            car.available_cars = car.available_cars -1
-            car.save()
-            return Response(serialize.data,status=status.HTTP_201_CREATED)
-        else:
-            return Response("Car is not available",status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        try:
+            car = Car.objects.get(pk=request.data['car'])
+            if car.available_cars>0:
+                serialize = BookingSerializers(data=request.data)
+                serialize.is_valid(raise_exception=True)
+                serialize.save()
+                car.available_cars = car.available_cars -1
+                car.save()
+                return Response(serialize.data,status=status.HTTP_201_CREATED)
+        except Car.DoesNotExist:
+            return Response("Car is not available",status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
+            # else:
+            # return Response("Car is not available",status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-
-
 @api_view()
 def get_particular_car(request,pk):
     try:
         car = Car.objects.get(pk=pk)
-    except Car.DoesNotExist as e:
-        raise Http404("The car is not available") from e
-    if car.available_cars>0:
-        serialize = AvailableCarSerializers(car)
-    else:
-        booking = Booking.objects.filter(car=car.id)
-        serialize = BookingSerializers(booking,many=True)
-    return Response(serialize.data,status=status.HTTP_200_OK)
+        if car.available_cars>0:
+            serialize = AvailableCarSerializers(car)
+        else:
+            booking = Booking.objects.filter(car=car.id)
+            serialize = BookingSerializers(booking,many=True)
+        return Response(serialize.data,status=status.HTTP_200_OK)
+    except Car.DoesNotExist:
+        return Response("Car Not Found",status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
     
-@api_view(['GET','POST'])
+
+@api_view()
 def userbookingdetail(request,pk):
     if request.method == 'GET':
-        userbooking = Booking.objects.filter(user_id=pk)
-        ic(userbooking)
-        serialize = BookingSerializers(userbooking,many=True)
-        return Response(serialize.data,status=status.HTTP_200_OK)
-    if request.method == 'POST':
-        booking = Booking.objects.filter(pk=pk)
-        ic(booking)
-        return Response(booking)
+        try:    
+            userbookings = Booking.objects.filter(user_id=pk)
+            if not userbookings:
+                return Response("User Does Not Exist",status=status.HTTP_404_NOT_FOUND)
+            serializer = BookingSerializers(userbookings,many=True)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
         
+
 @api_view()
 def cancelbooking(request,pk):
-    booking = Booking.objects.get(pk=pk)
-    booking.booking_status = 'Cancel'
-    car_id = booking.car.id
-    car = Car.objects.get(pk=car_id)
-    car.available_cars = car.available_cars + 1
-    car.save()
-    booking.save()
-    return Response('Booking Cancel',status=status.HTTP_200_OK)
+    if request.method == 'GET':    
+        try:   
+            target_booking = Booking.objects.get(pk=pk)
+            target_booking.booking_status = 'Cancel'
+            target_car = target_booking.car.id
+            target_car = Car.objects.get(pk=target_booking.car.id)
+            if target_booking.booking_status != 'Cancel':
+                target_car.available_cars = target_car.available_cars + 1
+                target_car.save()
+                target_booking.save()
+            return Response('Booking Cancel',status=status.HTTP_200_OK)
+        except Booking.DoesNotExist:
+            return Response("No Such Booking Found",status= status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
 
 def str_time(date):  # sourcery skip: avoid-builtin-shadow
     format = '%Y-%m-%d'
@@ -110,19 +126,28 @@ def filter_available_car(request):
 @api_view(['GET','POST'])
 def extend_user_booking(request,pk):
     if request.method == 'GET':
-        userbooking = Booking.objects.filter(pk=pk)
-        ic(userbooking)
-        serialize = BookingSerializers(userbooking,many=True)
-        return Response(serialize.data,status=status.HTTP_200_OK)
+        try:
+            userbooking = Booking.objects.filter(pk=pk)
+            serialize = BookingSerializers(userbooking,many=True)
+            return Response(serialize.data,status=status.HTTP_200_OK)
+        except Booking.DoesNotExist:
+            return Response('Booking Does not Exists',status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(str(e),status= status.HTTP_400_BAD_REQUEST)
     if request.method == 'POST':
-        booking_id = request.data['id']
-        booking = Booking.objects.get(pk=booking_id)
-        return_date = str_time(request.data['return_date'])
-        response = booking.get_booking_detail(request,booking,return_date)
-        booking = Booking.objects.get(pk=booking_id)
-        booking_serializer = BookingSerializers(booking)
-        if response:
-            return Response(booking_serializer.data,status=status.HTTP_200_OK)
-        return Response("Cannot Extend",status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        try:    
+            booking_id = request.data['id']
+            booking = Booking.objects.get(pk=booking_id)
+            return_date = str_time(request.data['return_date'])
+            response = booking.get_booking_detail(request,booking,return_date)
+            booking = Booking.objects.get(pk=booking_id)
+            booking_serializer = BookingSerializers(booking)
+            if response:
+                return Response(booking_serializer.data,status=status.HTTP_200_OK)
+            return Response("Cannot Extend",status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        except Booking.DoesNotExist:
+            return Response("Booking Does not exists",status=status.HTTP_404_NOT_FOUND)
+        
+        
 
 
