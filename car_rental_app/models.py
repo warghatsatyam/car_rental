@@ -2,6 +2,7 @@ from django.db import models
 # from car_rental_app.views import str_time
 # Create your models here.
 from icecream import ic
+from django.db.models import Q
 class Car(models.Model):
     car_name = models.CharField(max_length=50)
     car_model = models.CharField(max_length=50)
@@ -39,26 +40,25 @@ class Booking(models.Model):
     class Meta:
         db_table = 'booking'
     
-    def get_booking_detail(self,request,booking,return_date):
+    def get_booking_detail(self,booking,return_date):
         car_id = booking.car_id
         avail_car = booking.car.available_cars
-        all_x_car_booking = Booking.objects.filter(car_id=car_id).order_by('issue_date')
-        ic(all_x_car_booking)
-        ic(avail_car)
+        booking_id=booking.id
+        # all_x_car_booking = Booking.objects.filter(Q(car_id=car_id)  & ~Q(id=booking_id) & ~Q(booking_status='Cancel') & (Q(issue_date__lt=return_date) & Q(return_date__gt=return_date)| (Q(issue_date__gt=return_date) 
+        #                                                                         & Q(return_date__gt=return_date)))).order_by('issue_date')
         extend = False
         if avail_car>1:
             booking.return_date = return_date
             booking.save()
             extend=True
         else:
-            for x in all_x_car_booking:
-                ic(type(return_date),type(x.issue_date),type(x.return_date))
-                if return_date >= x.issue_date and return_date <= x.return_date :
-                    extend = False
-                else:
-                    booking.return_date = return_date
-                    booking.save()
-                    extend = True
+            bool_extend = Booking.objects.filter(Q(car_id=car_id)& ~Q(booking_status='Cancel') & ~Q(id=booking_id) & Q(issue_date__lt=return_date)& Q(return_date__gt=return_date)).exists()
+            ic(bool_extend)
+            if bool_extend:
+                extend = True
+            else:
+                extend = False
+        ic(extend)
         return extend
 
 

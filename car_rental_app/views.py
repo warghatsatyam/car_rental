@@ -96,7 +96,7 @@ def str_time(date):  # sourcery skip: avoid-builtin-shadow
     format = '%Y-%m-%d'
     return datetime.strptime(date,format).date()
 
-@api_view(['GET'])
+@api_view(['GET','POST'])
 def filter_available_car(request):
     if request.method == 'GET':
         issue_date = str_time(request.GET.get('issue_date'))
@@ -121,9 +121,16 @@ def filter_available_car(request):
                         available_cars.append(x) 
         serialize = AvailableCarSerializers(available_cars,many=True)
         return Response(serialize.data)
+    if request.method == 'POST':
+        car_id = request.data['car']
+        car = Car.objects.get(pk=car_id).id
+        serializer = BookingSerializers(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data,status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET','POST'])
+@api_view(['GET','PUT'])
 def extend_user_booking(request,pk):
     if request.method == 'GET':
         try:
@@ -134,12 +141,12 @@ def extend_user_booking(request,pk):
             return Response('Booking Does not Exists',status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(str(e),status= status.HTTP_400_BAD_REQUEST)
-    if request.method == 'POST':
+    if request.method == 'PUT':
         try:    
             booking_id = request.data['id']
             booking = Booking.objects.get(pk=booking_id)
             return_date = str_time(request.data['return_date'])
-            response = booking.get_booking_detail(request,booking,return_date)
+            response = booking.get_booking_detail(booking,return_date)
             booking = Booking.objects.get(pk=booking_id)
             booking_serializer = BookingSerializers(booking)
             if response:
