@@ -99,8 +99,8 @@ def str_time(date):  # sourcery skip: avoid-builtin-shadow
 @api_view(['GET','POST'])
 def filter_available_car(request):
     if request.method == 'GET':
-        issue_date = str_time(request.GET.get('issue_date'))
-        return_date = str_time(request.GET.get('return_date'))
+        issue_date = request.GET.get('issue_date')
+        return_date = request.GET.get('return_date')
         car_name = request.GET.get('car_name')
         car_model = request.GET.get('car_model')
         seat_capacity = request.GET.get('seat_capacity')
@@ -109,18 +109,22 @@ def filter_available_car(request):
         queryset = Car.objects.filter(Q(available_cars__gt=0)|Q(car_name=car_name)|Q(car_model=car_model)|Q(seat_capacity=seat_capacity)|Q(per_day_price=per_day_price))
         available_cars.extend(queryset)
         car2 = Car.objects.filter(available_cars=0)
-        for x in car2:
-            bookings = Booking.objects.filter(car_id=x.id).order_by('issue_date')
-            ic(bookings)
-            for booking in bookings:
-                if (issue_date<booking.issue_date and return_date < booking.issue_date) or (issue_date>booking.return_date and return_date>booking.return_date):
-                    car_available=True
-                else:
-                    car_available = False
-                if car_available and (x not in available_cars):
-                        available_cars.append(x) 
+        if issue_date and return_date:
+            for x in car2:
+                bookings = Booking.objects.filter(car_id=x.id).order_by('issue_date')
+                for booking in bookings:
+                    car_available = (
+                        issue_date < booking.issue_date
+                        and return_date < booking.issue_date
+                    ) or (
+                        issue_date > booking.return_date
+                        and return_date > booking.return_date
+                    )
+                    if car_available and (x not in available_cars):
+                        available_cars.append(x)
         serialize = AvailableCarSerializers(available_cars,many=True)
         return Response(serialize.data)
+
     if request.method == 'POST':
         car_id = request.data['car']
         car = Car.objects.get(pk=car_id).id
@@ -141,6 +145,7 @@ def extend_user_booking(request,pk):
             return Response('Booking Does not Exists',status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(str(e),status= status.HTTP_400_BAD_REQUEST)
+        
     if request.method == 'PUT':
         try:    
             booking_id = request.data['id']

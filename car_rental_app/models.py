@@ -44,8 +44,6 @@ class Booking(models.Model):
         car_id = booking.car_id
         avail_car = booking.car.available_cars
         booking_id=booking.id
-        # all_x_car_booking = Booking.objects.filter(Q(car_id=car_id)  & ~Q(id=booking_id) & ~Q(booking_status='Cancel') & (Q(issue_date__lt=return_date) & Q(return_date__gt=return_date)| (Q(issue_date__gt=return_date) 
-        #                                                                         & Q(return_date__gt=return_date)))).order_by('issue_date')
         extend = False
         if avail_car>1:
             booking.return_date = return_date
