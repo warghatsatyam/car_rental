@@ -74,24 +74,43 @@ def userbookingdetail(request,pk):
             return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
         
 
-@api_view()
-def cancelbooking(request,pk):
-    if request.method == 'GET':    
-        try:   
-            target_booking = Booking.objects.get(pk=pk)
-            target_booking.booking_status = 'Cancel'
-            target_car = target_booking.car.id
-            target_car = Car.objects.get(pk=target_booking.car.id)
-            if target_booking.booking_status != 'Cancel':
-                target_car.available_cars = target_car.available_cars + 1
-                target_car.save()
-                target_booking.save()
-            return Response('Booking Cancel',status=status.HTTP_200_OK)
-        except Booking.DoesNotExist:
-            return Response("No Such Booking Found",status= status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
+#@api_view()
+# def cancelbooking(request,pk):
+#     if request.method == 'GET':    
+#         try:   
+#             target_booking = Booking.objects.get(pk=pk)
+#             target_booking.booking_status = 'Cancel'
+#             target_car = target_booking.car.id
+#             target_car = Car.objects.get(pk=target_booking.car.id)
+#             target_booking.save()
+#             if target_booking.booking_status != 'Cancel':
+#                 target_car.available_cars = target_car.available_cars + 1
+#                 target_car.save()
+#                 target_booking.save()
+#             return Response('Booking Cancel',status=status.HTTP_204_NO_CONTENT)
+#         except Booking.DoesNotExist:
+#             return Response("No Such Booking Found",status= status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+def cancelBooking(request,pk):
+    if request.method == 'GET':
+        try:
+            target_booking = Booking.objects.get(pk=pk)
+            if target_booking.booking_status == 'Cancel':
+                return Response("No Such Booking",status=status.HTTP_204_NO_CONTENT)
+            else:
+                target_booking.booking_status = 'Cancel'
+                target_booking.save()
+                car_id = target_booking.car.id
+                booked_car = Car.objects.get(pk=car_id)
+                booked_car.available_cars +=1
+                booked_car.save()
+                return Response("Booking Cancelled",status=status.HTTP_204_NO_CONTENT)
+        except Booking.DoesNotExist:
+            return Response("No such Booking Found",status=status.HTTP_204_NO_CONTENT)
+    
 def str_time(date):  # sourcery skip: avoid-builtin-shadow
     format = '%Y-%m-%d'
     return datetime.strptime(date,format).date()
@@ -127,10 +146,14 @@ def filter_available_car(request):
 
     if request.method == 'POST':
         car_id = request.data['car']
-        car = Car.objects.get(pk=car_id).id
+        car = Car.objects.get(pk=car_id)
         serializer = BookingSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        car_availablity = car.available_cars
+        if car_availablity>0:
+            car.available_cars = car.available_cars -1
+            car.save()
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
 
