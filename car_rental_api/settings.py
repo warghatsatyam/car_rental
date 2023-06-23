@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'car_rental_app'
+    'car_rental_app',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [

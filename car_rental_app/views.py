@@ -38,6 +38,8 @@ def getavailablecar(request):
                 car.available_cars = car.available_cars -1
                 car.save()
                 return Response(serialize.data,status=status.HTTP_201_CREATED)
+            else:
+                return Response("Car is not available",status=status.HTTP_404_NOT_FOUND)
         except Car.DoesNotExist:
             return Response("Car is not available",status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
@@ -72,27 +74,7 @@ def userbookingdetail(request,pk):
             return Response(serializer.data,status=status.HTTP_200_OK)
         except Exception as e:
             return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
-        
-
-#@api_view()
-# def cancelbooking(request,pk):
-#     if request.method == 'GET':    
-#         try:   
-#             target_booking = Booking.objects.get(pk=pk)
-#             target_booking.booking_status = 'Cancel'
-#             target_car = target_booking.car.id
-#             target_car = Car.objects.get(pk=target_booking.car.id)
-#             target_booking.save()
-#             if target_booking.booking_status != 'Cancel':
-#                 target_car.available_cars = target_car.available_cars + 1
-#                 target_car.save()
-#                 target_booking.save()
-#             return Response('Booking Cancel',status=status.HTTP_204_NO_CONTENT)
-#         except Booking.DoesNotExist:
-#             return Response("No Such Booking Found",status= status.HTTP_404_NOT_FOUND)
-#         except Exception as e:
-#             return Response(str(e),status=status.HTTP_400_BAD_REQUEST)
-
+    
 @api_view(['GET'])
 def cancelBooking(request,pk):
     if request.method == 'GET':
@@ -110,7 +92,7 @@ def cancelBooking(request,pk):
                 return Response("Booking Cancelled",status=status.HTTP_204_NO_CONTENT)
         except Booking.DoesNotExist:
             return Response("No such Booking Found",status=status.HTTP_204_NO_CONTENT)
-    
+
 def str_time(date):  # sourcery skip: avoid-builtin-shadow
     format = '%Y-%m-%d'
     return datetime.strptime(date,format).date()
@@ -118,8 +100,15 @@ def str_time(date):  # sourcery skip: avoid-builtin-shadow
 @api_view(['GET','POST'])
 def filter_available_car(request):
     if request.method == 'GET':
-        issue_date = request.GET.get('issue_date')
-        return_date = request.GET.get('return_date')
+        ic(request.query_params)
+        if 'issue_date' in request.query_params:
+            issue_date = request.query_params['issue_date']
+        else:
+            issue_date = False
+        if 'return_date' in request.query_params:
+            return_date = request.query_params['return_date']
+        else:
+            return_date = False
         car_name = request.GET.get('car_name')
         car_model = request.GET.get('car_model')
         seat_capacity = request.GET.get('seat_capacity')
@@ -128,19 +117,25 @@ def filter_available_car(request):
         queryset = Car.objects.filter(Q(available_cars__gt=0)|Q(car_name=car_name)|Q(car_model=car_model)|Q(seat_capacity=seat_capacity)|Q(per_day_price=per_day_price))
         available_cars.extend(queryset)
         car2 = Car.objects.filter(available_cars=0)
+        ic(car2)
+        # if issue_date and return_date:
+        #     for x in car2:
+        #         bookings = Booking.objects.filter(car_id=x.id).order_by('issue_date')
+        #         for booking in bookings:
+        #             car_available = (
+        #                 issue_date < booking.issue_date
+        #                 and return_date < booking.issue_date
+        #             ) or (
+        #                 issue_date > booking.return_date
+        #                 and return_date > booking.return_date
+        #             )
+        #             if car_available and (x not in available_cars):
+        #                 available_cars.append(x)
         if issue_date and return_date:
             for x in car2:
-                bookings = Booking.objects.filter(car_id=x.id).order_by('issue_date')
-                for booking in bookings:
-                    car_available = (
-                        issue_date < booking.issue_date
-                        and return_date < booking.issue_date
-                    ) or (
-                        issue_date > booking.return_date
-                        and return_date > booking.return_date
-                    )
-                    if car_available and (x not in available_cars):
-                        available_cars.append(x)
+                user_date_greater_than_all_booking = Booking.objects.filter(Q(car_id = x.id),Q(return_date__lt=issue_date),Q(return_date__lt=return_date))
+                user_date_lesser_than_all_booking = Booking.objects.filter(Q(car_id=x.id),Q(issue_date__gt=issue_date),Q(issue_date__gt=return_date))
+                ic(user_date_greater_than_all_booking,user_date_lesser_than_all_booking)
         serialize = AvailableCarSerializers(available_cars,many=True)
         return Response(serialize.data)
 
